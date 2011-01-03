@@ -41,35 +41,39 @@
          * @throws  BadMethodCallException  Thrown if a corresponding GET,POST is not found
          *
          */
-        static function stick ($urls) {
-
-            $method = strtoupper($_SERVER['REQUEST_METHOD']);
+        static function __construct( $urls ) {
+            if( count( $urls ) == 0 ) {
+                throw new Exception( 'No URLs given.' );
+            }
+            $method = strtoupper( $_SERVER['REQUEST_METHOD'] );
             $path = $_SERVER['REQUEST_URI'];
-
-            $found = false;
-
-            krsort($urls);
-
-            foreach ($urls as $regex => $class) {
-                $regex = str_replace('/', '\/', $regex);
-                $regex = '^' . $regex . '\/?$';
-                if (preg_match("/$regex/i", $path, $matches)) {
-                    $found = true;
-                    if (class_exists($class)) {
+            krsort( $urls );
+            foreach( $urls as $regex => $class ) {
+                if( preg_match( '#^'.$regex.'/?#i', $path, $matches ) ) {
+                    $this->loader();
+                    if( class_exists( $class ) ) {
                         $obj = new $class;
-                        if (method_exists($obj, $method)) {
-                            $obj->$method($matches);
-                        } else {
-                            throw new BadMethodCallException("Method, $method, not supported.");
+                        if( method_exists( $obj, $method ) ) {
+                            $obj->args = $matches;
+                            $obj->$method();
+                            return;
                         }
-                    } else {
-                        throw new Exception("Class, $class, not found.");
+                        else {
+                            throw new BadMethodCallException( 'Method "'.$method.'" not supported.' );
+                        }
                     }
-                    break;
+                    else {
+                        throw new Exception( 'Class "'.$class.'" not found.' );
+                    }
                 }
             }
-            if (!$found) {
-                throw new Exception("URL, $path, not found.");
-            }
+            throw new Exception( 'URL "'.$path.'" not found.' );
+        }
+
+        static function loader( $class ) {
+        	$file = $this->class.'.class.php';
+			if( !is_readable( $file ) ) { return false; }
+			require_once( $file );
+			return true;
         }
     }
