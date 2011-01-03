@@ -25,7 +25,7 @@
      *      }
      * }
      *
-     * glue::stick($urls);
+     * $glue = new glue($urls);
      *
      */
     class glue {
@@ -56,7 +56,7 @@
                         if( method_exists( $obj, $method ) ) {
                             $obj->args = $matches;
                             $obj->$method();
-                            return;
+                            return $obj;
                         }
                         else {
                             throw new BadMethodCallException( 'Method "'.$method.'" not supported.' );
